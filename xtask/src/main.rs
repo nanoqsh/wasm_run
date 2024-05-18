@@ -82,14 +82,17 @@ fn install_and_run(cmd: &mut Command, no_install: bool) -> Result<(), Error> {
     let name = cmd.get_program().to_string_lossy().into_owned();
     match run(cmd, &name) {
         Run::Ok => return Ok(()),
-        Run::NotFound if no_install => return Ok(()),
-        Run::NotFound => eprintln!("{name} not found, installing.."),
+        Run::NotFound if no_install => {}
+        Run::NotFound => {
+            eprintln!("{name} not found, installing..");
+            install(&name)?;
+        }
         Run::Failed(s) => return Err(Error::from(s)),
     }
 
-    install(&name)?;
     match run(cmd, &name) {
         Run::Ok => Ok(()),
+        Run::NotFound if no_install => Err(Error::from(format!("{name} not found"))),
         Run::NotFound => Err(Error::from(format!("failed to install {name}"))),
         Run::Failed(s) => Err(Error::from(s)),
     }
